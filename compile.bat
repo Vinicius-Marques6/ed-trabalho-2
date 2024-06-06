@@ -2,9 +2,9 @@
 
 echo Compilando...
 if "%~1" == "-v" (
-    gcc -Wall -pedantic -g -o main.exe ./lib/src/hash.c ./lib/src/json.c ./main.c -DVERBOSE
+    gcc -Wall -pedantic -g -o main.exe ./lib/src/hash.c ./lib/src/json.c ./lib/src/avl.c ./main.c -DVERBOSE
 ) else (
-    gcc -Wall -pedantic -g -o main.exe ./lib/src/hash.c ./lib/src/json.c ./main.c
+    gcc -Wall -pedantic -g -o main.exe ./lib/src/hash.c ./lib/src/json.c ./lib/src/avl.c ./main.c
 )
 
 if %ERRORLEVEL% neq 0 (

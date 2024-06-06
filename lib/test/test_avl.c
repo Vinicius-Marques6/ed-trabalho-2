@@ -29,11 +29,14 @@ int main() {
     avl_insere(&arv, aloca_aluno(1, "João"));
     avl_insere(&arv, aloca_aluno(2, "Maria"));
     avl_insere(&arv, aloca_aluno(3, "José"));
+    avl_insere(&arv, aloca_aluno(3, "Ana"));
 
-    aluno *a = (aluno *) avl_busca(&arv, aloca_aluno(2, ""));
-    assert(a != NULL);
-    assert(a->id == 2);
-    assert(strcmp(a->nome, "Maria") == 0);
+    tlista *l = avl_range(&arv, aloca_aluno(3, ""));
+    assert(l != NULL);
+    assert(((aluno *) l->reg)->id == 3);
+    assert(strcmp(((aluno *) l->reg)->nome, "José") == 0);
+    assert(((aluno *) l->prox->reg)->id == 3);
+    assert(strcmp(((aluno *) l->prox->reg)->nome, "Ana") == 0);
 
     return EXIT_SUCCESS;
 }

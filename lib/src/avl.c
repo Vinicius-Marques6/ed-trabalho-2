@@ -86,17 +86,30 @@ void avl_constroi(tarv *parv, double (*cmp)(void *, void *)) {
     parv->cmp = cmp;
 }
 
+void _lista_insere(tlista **plista, void *reg) {
+    if (*plista == NULL) {
+        *plista = (tlista *) malloc(sizeof(tlista));
+        (*plista)->reg = reg;
+        (*plista)->prox = NULL;
+    } else {
+        _lista_insere(&(*plista)->prox, reg);
+    }
+}
+
 void _avl_insere_node(tarv *parv, tnode **ppnode, void *reg) {
     if (*ppnode == NULL) {
         *ppnode = (tnode *) malloc(sizeof(tnode));
-        (*ppnode)->reg = reg;
+        (*ppnode)->lista = NULL;
+        _lista_insere(&(*ppnode)->lista, reg);
         (*ppnode)->esq = NULL;
         (*ppnode)->dir = NULL;
         (*ppnode)->h = 0;
-    } else if (parv->cmp((*ppnode)->reg, reg) > 0) {
+    } else if (parv->cmp((*ppnode)->lista->reg, reg) > 0) {
        _avl_insere_node(parv, &(*ppnode)->esq, reg);
-    } else {
+    } else if (parv->cmp((*ppnode)->lista->reg, reg) < 0) {
         _avl_insere_node(parv, &(*ppnode)->dir, reg);
+    } else {
+        _lista_insere(&(*ppnode)->lista, reg);
     }
     (*ppnode)->h = max(altura((*ppnode)->esq), altura((*ppnode)->dir)) + 1;
 
@@ -112,16 +125,16 @@ void _avl_remove_node(tarv *parv, tnode **ppnode, void *reg) {
     tnode *aux;
     tnode **sucessor;
     if (*ppnode != NULL) {
-        cmp = parv->cmp((*ppnode)->reg, reg);
-        if (cmp > 0) { /* ir esquerda*/
+        cmp = parv->cmp((*ppnode)->lista->reg, reg);
+        if (cmp > 0) { // ir esquerda
             _avl_remove_node(parv, &((*ppnode)->esq), reg);
-        } else if (cmp < 0) { /*ir direita*/
+        } else if (cmp < 0) { //ir direita 
             _avl_remove_node(parv, &((*ppnode)->dir), reg);
-        } else {                                                /* ACHOU  */
-            if ((*ppnode)->esq == NULL && (*ppnode)->dir == NULL) { /* no folha */
+        } else {                                                // ACHOU
+            if ((*ppnode)->esq == NULL && (*ppnode)->dir == NULL) { // no folha
                 free(*ppnode);
                 *ppnode = NULL;
-            } else if ((*ppnode)->esq == NULL || (*ppnode)->dir == NULL) { /* tem um filho*/
+            } else if ((*ppnode)->esq == NULL || (*ppnode)->dir == NULL) { // tem um filho
                 aux = *ppnode;
                 if ((*ppnode)->esq == NULL) {
                     *ppnode = (*ppnode)->dir;
@@ -129,10 +142,10 @@ void _avl_remove_node(tarv *parv, tnode **ppnode, void *reg) {
                     *ppnode = (*ppnode)->esq;
                 }
                 free(aux);
-            } else { /* tem dois filhos */
+            } else { // tem dois filhos
                 sucessor = percorre_esq(&(*ppnode)->dir);
-                (*ppnode)->reg = (*sucessor)->reg;
-                _avl_remove_node(parv, &(*ppnode)->dir, (*sucessor)->reg);
+                (*ppnode)->lista->reg = (*sucessor)->lista->reg;
+                _avl_remove_node(parv, &(*ppnode)->dir, (*sucessor)->lista->reg);
             }
         }
         if (*ppnode != NULL) {
@@ -142,33 +155,39 @@ void _avl_remove_node(tarv *parv, tnode **ppnode, void *reg) {
     }
 }
 
-void * _avl_busca_node(tarv *parv, tnode *pnode, void *reg) {
+void avl_remove(tarv *parv, void *reg) {
+    _avl_remove_node(parv, &parv->raiz, reg);
+}
+
+tlista * _avl_range_node(tarv *parv, tnode *pnode, void *reg) {
     if (pnode == NULL) {
         return NULL;
     } else {
-        int cmp = parv->cmp(pnode->reg, reg);
+        double cmp = parv->cmp(pnode->lista->reg, reg);
         if (cmp == 0) {
-            return pnode->reg;
+            return pnode->lista;
         } else if (cmp > 0) {
-            return _avl_busca_node(parv, pnode->esq, reg);
+            return _avl_range_node(parv, pnode->esq, reg);
         } else {
-            return _avl_busca_node(parv, pnode->dir, reg);
+            return _avl_range_node(parv, pnode->dir, reg);
         }
     }
 }
 
-void * avl_busca(tarv *parv, void *reg) {
-    return _avl_busca_node(parv, parv->raiz, reg);
-}
-
-void avl_remove(tarv *parv, void *reg) {
-    _avl_remove_node(parv, &parv->raiz, reg);
+tlista * avl_range(tarv *parv, void *reg) {
+    return _avl_range_node(parv, parv->raiz, reg);
 }
 
 void _avl_destroi_node(tnode *pnode) {
      if (pnode != NULL) {
         _avl_destroi_node(pnode->esq);
         _avl_destroi_node(pnode->dir);
+        tlista *aux = pnode->lista;
+        while (aux != NULL) {
+            tlista *aux2 = aux;
+            aux = aux->prox;
+            free(aux2);
+        }
         free(pnode);
     }
 }
