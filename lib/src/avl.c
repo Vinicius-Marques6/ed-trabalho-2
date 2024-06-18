@@ -93,6 +93,23 @@ tnode **percorre_esq(tnode **arv) {
     }
 }
 
+tnode **sucessor(tnode **arv) {
+    if (*arv == NULL) {
+        return NULL;
+    }
+
+    if ((*arv)->dir != NULL) {
+        return percorre_esq(&(*arv)->dir);
+    }
+
+    tnode *pai = (*arv)->pai;
+    while (pai != NULL && *arv == pai->dir) {
+        *arv = pai;
+        pai = pai->pai;
+    }
+    return &pai;
+}
+
 void avl_constroi(tarv *parv, double (*cmp)(void *, void *)) {
     parv->raiz = NULL;
     parv->cmp = cmp;
