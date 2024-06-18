@@ -25,6 +25,12 @@ void _rd(tnode **pnode) {
     y->esq = B;
     x->dir = y;
     *pnode = x;
+
+    if (B != NULL)
+        B->pai = y;
+    x->pai = y->pai;
+    y->pai = x;
+
     y->h = max(altura(B), altura(C)) + 1;
     x->h = max(altura(A), altura(y)) + 1;
 }
@@ -39,6 +45,12 @@ void _re(tnode **pnode) {
     x->dir = B;
     y->esq = x;
     *pnode = y;
+
+    if (B != NULL)
+        B->pai = x;
+    y->pai = x->pai;
+    x->pai = y;
+
     x->h = max(altura(A), altura(B)) + 1;
     y->h = max(altura(x), altura(C)) + 1;
 }
@@ -96,18 +108,19 @@ void _lista_insere(tlista **plista, void *reg) {
     }
 }
 
-void _avl_insere_node(tarv *parv, tnode **ppnode, void *reg) {
+void _avl_insere_node(tarv *parv, tnode **ppnode, tnode *ppai, void *reg) {
     if (*ppnode == NULL) {
         *ppnode = (tnode *) malloc(sizeof(tnode));
         (*ppnode)->lista = NULL;
         _lista_insere(&(*ppnode)->lista, reg);
+        (*ppnode)->pai = ppai;
         (*ppnode)->esq = NULL;
         (*ppnode)->dir = NULL;
         (*ppnode)->h = 0;
     } else if (parv->cmp((*ppnode)->lista->reg, reg) > 0) {
-       _avl_insere_node(parv, &(*ppnode)->esq, reg);
+       _avl_insere_node(parv, &(*ppnode)->esq, *ppnode, reg);
     } else if (parv->cmp((*ppnode)->lista->reg, reg) < 0) {
-        _avl_insere_node(parv, &(*ppnode)->dir, reg);
+        _avl_insere_node(parv, &(*ppnode)->dir, *ppnode, reg);
     } else {
         _lista_insere(&(*ppnode)->lista, reg);
     }
@@ -117,7 +130,7 @@ void _avl_insere_node(tarv *parv, tnode **ppnode, void *reg) {
 }
 
 void avl_insere(tarv *parv, void *reg) {
-    _avl_insere_node(parv, &parv->raiz, reg);
+    _avl_insere_node(parv, &parv->raiz, NULL, reg);
 }
 
 void _avl_remove_node(tarv *parv, tnode **ppnode, void *reg) {
