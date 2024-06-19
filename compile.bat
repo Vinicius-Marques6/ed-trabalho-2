@@ -13,4 +13,4 @@ if %ERRORLEVEL% neq 0 (
     exit /B 1
 )
 
-START main.exe municipios.json
+main.exe municipios.json

@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
         }
 
         tint *t = aloca_int(ddd, "");
-        tlista *l = avl_range(&arv_ddd, t);
+        tlista *l = avl_range(&arv_ddd, t, t);
         if (l == NULL) {
             printf(NAO_ENCONTRADO);
         } else {

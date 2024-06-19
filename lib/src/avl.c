@@ -94,6 +94,23 @@ tnode **percorre_esq(tnode **arv) {
     }
 }
 
+tnode **predecessor(tnode **arv) {
+    if (*arv == NULL) {
+        return NULL;
+    }
+
+    if ((*arv)->esq != NULL) {
+        return percorre_esq(&(*arv)->esq);
+    }
+
+    tnode *pai = (*arv)->pai;
+    while (pai != NULL && *arv == pai->esq) {
+        *arv = pai;
+        pai = pai->pai;
+    }
+    return &(*arv)->pai;
+}
+
 tnode **sucessor(tnode **arv) {
     if (*arv == NULL) {
         return NULL;
@@ -123,6 +140,21 @@ void _lista_insere(tlista **plista, void *reg) {
         (*plista)->prox = NULL;
     } else {
         _lista_insere(&(*plista)->prox, reg);
+    }
+}
+
+void _lista_copia(tlista **pplista, tlista *lista) {
+    while (lista != NULL) {
+        _lista_insere(pplista, lista->reg);
+        lista = lista->prox;
+    }
+}
+
+void _lista_apaga(tlista **plista) {
+    if (*plista != NULL) {
+        _lista_apaga(&(*plista)->prox);
+        free(*plista);
+        *plista = NULL;
     }
 }
 
@@ -190,16 +222,40 @@ void avl_remove(tarv *parv, void *reg) {
     _avl_remove_node(parv, &parv->raiz, reg);
 }
 
-tlista * _avl_range_node(tarv *parv, tnode *pnode, void *reg_min, void *reg_max) {
-    if (pnode == NULL) {
+tnode **_avl_busca_node(tarv *parv, tnode **pnode, void *reg) {
+    if (*pnode == NULL) {
         return NULL;
     } else {
-        if (reg_min == NULL) {}
+        if (parv->cmp((*pnode)->lista->reg, reg) == 0) {
+            return pnode;
+        } else if (parv->cmp((*pnode)->lista->reg, reg) > 0) {
+            return _avl_busca_node(parv, &(*pnode)->esq, reg);
+        } else {
+            return _avl_busca_node(parv, &(*pnode)->dir, reg);
+        }
     }
 }
 
+void _avl_menor_que(tarv *parv, tlista **lista, tnode **pnode) {
+    tnode **pred = predecessor(pnode);
+    while (*pred != NULL) {
+        _lista_copia(lista, (*pred)->lista);
+        pred = predecessor(pred);
+        printf("pred: %p\n", (void *) pred);
+    }
+}
+
+tlista * _avl_range_node(tarv *parv, tnode **pnode, void *reg_min, void *reg_max) {
+    tlista *l = NULL;
+    tnode **pred = _avl_busca_node(parv, pnode, reg_max);
+    printf("pred: %p\n", (void *) pred);
+    _avl_menor_que(parv, &l, pred);
+    printf("l: %p\n", (void *) l);
+    return l;
+}
+
 tlista *avl_range(tarv *parv, void *reg_min, void *reg_max) {
-    return _avl_range_node(parv, parv->raiz, reg_min, reg_max);
+    return _avl_range_node(parv, &parv->raiz, reg_min, reg_max);
 }
 
 typedef struct {
@@ -228,7 +284,7 @@ tlista *lista_interseccao(tlista **listas, int n_listas, int max_size, char *(*g
 
     tlista *result = NULL;
     for (int i = 0; i < hash_freq.size; i++) {
-        if(hash_freq.table[i] != NULL) {
+        if(hash_freq.table[i] != 0) {
             tfreq *freq = (tfreq *) hash_freq.table[i];
             if (freq->freq == n_listas) {
                 tlista *aux = (tlista *) malloc(sizeof(tlista));

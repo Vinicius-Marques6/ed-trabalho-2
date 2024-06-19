@@ -23,7 +23,7 @@ void avl_constroi(tarv *parv, double (*cmp)(void *, void *));
 void avl_insere(tarv *parv, void *reg);
 // void avl_remove(tarv *parv, void *reg);
 void avl_destroi(tarv *parv);
-tlista *avl_range(tarv *parv, void *reg);
-tlista *lista_interseccao(tlista **listas, int n_listas);
+tlista *avl_range(tarv *parv, void *reg_min, void *reg_max);
+tlista *lista_interseccao(tlista **listas, int n_listas, int max_size, char *(*get_key)(void *));
 
 #endif
