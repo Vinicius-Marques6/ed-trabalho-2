@@ -24,5 +24,6 @@ void avl_insere(tarv *parv, void *reg);
 // void avl_remove(tarv *parv, void *reg);
 void avl_destroi(tarv *parv);
 tlista *avl_range(tarv *parv, void *reg);
+tlista *lista_interseccao(tlista **listas, int n_listas);
 
 #endif

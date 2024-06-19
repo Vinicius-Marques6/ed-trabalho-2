@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "../include/avl.h"
+#include "../include/hash.h"
 
 
 int max(int a, int b) {
@@ -107,7 +108,7 @@ tnode **sucessor(tnode **arv) {
         *arv = pai;
         pai = pai->pai;
     }
-    return &pai;
+    return &(*arv)->pai;
 }
 
 void avl_constroi(tarv *parv, double (*cmp)(void *, void *)) {
@@ -189,23 +190,57 @@ void avl_remove(tarv *parv, void *reg) {
     _avl_remove_node(parv, &parv->raiz, reg);
 }
 
-tlista * _avl_range_node(tarv *parv, tnode *pnode, void *reg) {
+tlista * _avl_range_node(tarv *parv, tnode *pnode, void *reg_min, void *reg_max) {
     if (pnode == NULL) {
         return NULL;
     } else {
-        double cmp = parv->cmp(pnode->lista->reg, reg);
-        if (cmp == 0) {
-            return pnode->lista;
-        } else if (cmp > 0) {
-            return _avl_range_node(parv, pnode->esq, reg);
-        } else {
-            return _avl_range_node(parv, pnode->dir, reg);
-        }
+        if (reg_min == NULL) {}
     }
 }
 
-tlista * avl_range(tarv *parv, void *reg) {
-    return _avl_range_node(parv, parv->raiz, reg);
+tlista *avl_range(tarv *parv, void *reg_min, void *reg_max) {
+    return _avl_range_node(parv, parv->raiz, reg_min, reg_max);
+}
+
+typedef struct {
+    void *reg;
+    int freq;
+} tfreq;
+
+tlista *lista_interseccao(tlista **listas, int n_listas, int max_size, char *(*get_key)(void *)) {
+    thash hash_freq;
+    hash_constroi(&hash_freq, max_size, get_key);
+    for(int i = 0; i < n_listas; i++) {
+        tlista *aux = listas[i];
+        while (aux != NULL) {
+            tfreq *freq = (tfreq *) hash_busca(hash_freq, get_key(aux->reg));
+            if (freq == NULL) {
+                freq = (tfreq *) malloc(sizeof(tfreq));
+                freq->reg = aux->reg;
+                freq->freq = 1;
+                hash_insere(&hash_freq, freq);
+            } else {
+                freq->freq++;
+            }
+            aux = aux->prox;
+        }
+    }
+
+    tlista *result = NULL;
+    for (int i = 0; i < hash_freq.size; i++) {
+        if(hash_freq.table[i] != NULL) {
+            tfreq *freq = (tfreq *) hash_freq.table[i];
+            if (freq->freq == n_listas) {
+                tlista *aux = (tlista *) malloc(sizeof(tlista));
+                aux->reg = freq->reg;
+                aux->prox = result;
+                result = aux;
+            }
+        }
+    }
+
+    hash_apaga(&hash_freq);
+    return result;
 }
 
 void _avl_destroi_node(tnode *pnode) {
