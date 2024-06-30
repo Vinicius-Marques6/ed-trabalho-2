@@ -1,11 +1,8 @@
 @echo off
 
 echo Compilando...
-if "%~1" == "-v" (
-    gcc -Wall -pedantic -g -o main.exe ./lib/src/hash.c ./lib/src/json.c ./lib/src/avl.c ./main.c -DVERBOSE
-) else (
-    gcc -Wall -pedantic -g -o main.exe ./lib/src/hash.c ./lib/src/json.c ./lib/src/avl.c ./main.c
-)
+
+gcc -Wall -pedantic -g -o main.exe ./lib/src/hash.c ./lib/src/json.c ./lib/src/avl.c ./*.c
 
 if %ERRORLEVEL% neq 0 (
     echo Houve um erro na compilação.

@@ -14,18 +14,32 @@ typedef struct {
 } tmunicipio;
 
 typedef struct {
-    char nome[100];
     char codigo_ibge[10];
+} tcodigo_ibge;
+
+typedef struct {
+    char codigo_ibge[10];
+    char nome[100];
 } tstring;
 
 typedef struct {
-    double valor;
     char codigo_ibge[10];
+    double valor;
 } tdouble;
 
 typedef struct {
-    int valor;
     char codigo_ibge[10];
+    int valor;
 } tint;
+
+char *get_cod(void *reg);
+double cmp_codigo_ibge(void *a, void *b);
+double cmp_nome(void *a, void *b);
+double cmp_double(void *a, void *b);
+double cmp_int(void *a, void *b);
+tstring *aloca_string(char *nome, char *codigo_ibge);
+tdouble *aloca_double(double valor, char *codigo_ibge);
+tint *aloca_int(int valor, char *codigo_ibge);
+void aloca_municipio(void **municipio);
 
 #endif

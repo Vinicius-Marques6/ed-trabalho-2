@@ -9,6 +9,20 @@ int max(int a, int b) {
     return a > b ? a : b;
 }
 
+// Compara dois nós e retorna o menor
+tnode *menor_no(tarv *parv, tnode *a, tnode *b) {
+    if (a == NULL) {
+        return b;
+    }
+    if (b == NULL) {
+        return a;
+    }
+    if (parv->cmp(a->lista->reg, b->lista->reg) < 0) {
+        return a;
+    }
+    return b;
+}
+
 int altura(tnode *arv) {
     if (arv == NULL)
        return -1;
@@ -83,10 +97,10 @@ void _avl_rebalancear(tnode **pnode) {
     }
 }
 
-tnode **percorre_esq(tnode **arv) {
-    tnode *aux = *arv;
+tnode **percorre_esq(tnode **ppnode) {
+    tnode *aux = *ppnode;
     if (aux->esq == NULL) {
-        return arv;
+        return ppnode;
     } else {
         while (aux->esq->esq != NULL)
             aux = aux->esq;
@@ -94,21 +108,21 @@ tnode **percorre_esq(tnode **arv) {
     }
 }
 
-tnode **sucessor(tnode **arv) {
-    if (*arv == NULL) {
+tnode **sucessor(tnode **ppnode) {
+    if (*ppnode == NULL) {
         return NULL;
     }
 
-    if ((*arv)->dir != NULL) {
-        return percorre_esq(&(*arv)->dir);
+    if ((*ppnode)->dir != NULL) {
+        return percorre_esq(&(*ppnode)->dir);
     }
 
-    tnode *pai = (*arv)->pai;
-    while (pai != NULL && *arv == pai->dir) {
-        *arv = pai;
+    tnode *pai = (*ppnode)->pai;
+    while (pai != NULL && *ppnode == pai->dir) {
+        *ppnode = pai;
         pai = pai->pai;
     }
-    return &(*arv)->pai;
+    return &(*ppnode)->pai;
 }
 
 void avl_constroi(tarv *parv, double (*cmp)(void *, void *)) {
@@ -151,6 +165,22 @@ void avl_insere(tarv *parv, void *reg) {
     _avl_insere_node(parv, &parv->raiz, NULL, reg);
 }
 
+void busca_menor_no(tarv *parv, tnode *pnode, tnode **menor, void *reg_min) {
+    if (reg_min == NULL) {
+        *menor = *(percorre_esq(&pnode));
+    } else if (pnode != NULL) {
+        if (parv->cmp(pnode->lista->reg, reg_min) < 0) {
+            busca_menor_no(parv, pnode->dir, menor, reg_min);
+        } else if (parv->cmp(pnode->lista->reg, reg_min) > 0){
+            *menor = menor_no(parv, *menor, pnode);
+            busca_menor_no(parv, pnode->esq, menor, reg_min);
+        } else {
+            *menor = pnode;
+        }
+    }
+}
+
+/*
 void _avl_remove_node(tarv *parv, tnode **ppnode, void *reg) {
     int cmp;
     tnode *aux;
@@ -188,59 +218,98 @@ void _avl_remove_node(tarv *parv, tnode **ppnode, void *reg) {
 
 void avl_remove(tarv *parv, void *reg) {
     _avl_remove_node(parv, &parv->raiz, reg);
-}
+}*/
 
-tlista * _avl_range_node(tarv *parv, tnode *pnode, void *reg_min, void *reg_max) {
+tlista *_avl_busca_node(tarv *parv, tnode *pnode, void *reg) {
     if (pnode == NULL) {
         return NULL;
     } else {
-        if (reg_min == NULL) {}
+        if (parv->cmp(pnode->lista->reg, reg) == 0) {
+            return pnode->lista;
+        } else if (parv->cmp(pnode->lista->reg, reg) > 0) {
+            return _avl_busca_node(parv, pnode->esq, reg);
+        } else {
+            return _avl_busca_node(parv, pnode->dir, reg);
+        }
     }
 }
 
-tlista *avl_range(tarv *parv, void *reg_min, void *reg_max) {
-    return _avl_range_node(parv, parv->raiz, reg_min, reg_max);
+tlista *avl_busca(tarv *parv, void *reg) {
+    return _avl_busca_node(parv, parv->raiz, reg);
 }
 
-typedef struct {
-    void *reg;
-    int freq;
-} tfreq;
+tlista * _avl_range_node(tarv *parv, tnode *pnode, void *min, void *max) {
+    tlista *listaInicio = NULL;
+    tlista *listaFim = NULL;
+    tnode *menor = NULL;
+    busca_menor_no(parv, pnode, &menor, min);
+    if (menor != NULL) {
+        while (menor != NULL && (max == NULL || parv->cmp(menor->lista->reg, max) <= 0)) {
+            tlista *aux = menor->lista;
+            while(aux != NULL) {
+                if (listaInicio == NULL) {
+                    listaInicio = (tlista *) malloc(sizeof(tlista));
+                    listaInicio->reg = aux->reg;
+                    listaFim = listaInicio;
+                } else {
+                    listaFim->prox = (tlista *) malloc(sizeof(tlista));
+                    listaFim = listaFim->prox;
+                    listaFim->reg = aux->reg;
+                    listaFim->prox = NULL;
+                }
+                aux = aux->prox;
+            }
+            menor = *(sucessor(&menor));
+        }
+    }
 
-tlista *lista_interseccao(tlista **listas, int n_listas, int max_size, char *(*get_key)(void *)) {
-    thash hash_freq;
-    hash_constroi(&hash_freq, max_size, get_key);
-    for(int i = 0; i < n_listas; i++) {
-        tlista *aux = listas[i];
-        while (aux != NULL) {
-            tfreq *freq = (tfreq *) hash_busca(hash_freq, get_key(aux->reg));
-            if (freq == NULL) {
-                freq = (tfreq *) malloc(sizeof(tfreq));
-                freq->reg = aux->reg;
-                freq->freq = 1;
-                hash_insere(&hash_freq, freq);
+    return listaInicio;
+}
+
+tlista *avl_range(tarv *parv, void *min, void *max) {
+    return _avl_range_node(parv, parv->raiz, min, max);
+}
+
+
+tlista *lista_interseccao(double (*cmp)(void *, void *), tlista **listas, int n_listas) {
+    tlista *interseccao = NULL;
+    tlista *aux = listas[0];
+    while (aux != NULL) {
+        int i;
+        for (i = 1; i < n_listas; i++) {
+            tlista *aux2 = listas[i];
+            while (aux2 != NULL && cmp(aux->reg, aux2->reg) != 0) {
+                aux2 = aux2->prox;
+            }
+            if (aux2 == NULL) {
+                break;
+            }
+        }
+        if (i == n_listas) {
+            if (interseccao == NULL) {
+                interseccao = (tlista *) malloc(sizeof(tlista));
+                interseccao->reg = aux->reg;
+                interseccao->prox = NULL;
             } else {
-                freq->freq++;
-            }
-            aux = aux->prox;
-        }
-    }
-
-    tlista *result = NULL;
-    for (int i = 0; i < hash_freq.size; i++) {
-        if(hash_freq.table[i] != NULL) {
-            tfreq *freq = (tfreq *) hash_freq.table[i];
-            if (freq->freq == n_listas) {
-                tlista *aux = (tlista *) malloc(sizeof(tlista));
-                aux->reg = freq->reg;
-                aux->prox = result;
-                result = aux;
+                tlista *aux3 = interseccao;
+                while (aux3->prox != NULL) {
+                    aux3 = aux3->prox;
+                }
+                aux3->prox = (tlista *) malloc(sizeof(tlista));
+                aux3->prox->reg = aux->reg;
+                aux3->prox->prox = NULL;
             }
         }
+        aux = aux->prox;
     }
+    return interseccao;
+}
 
-    hash_apaga(&hash_freq);
-    return result;
+void lista_destroi(tlista *plista) {
+    if (plista != NULL) {
+        lista_destroi(plista->prox);
+        free(plista);
+    }
 }
 
 void _avl_destroi_node(tnode *pnode) {
